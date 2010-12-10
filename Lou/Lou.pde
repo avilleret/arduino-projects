@@ -24,8 +24,6 @@ byte digit=1;
 long time;
 unsigned long compile_time = 0; // heure à laquelle a été compilé le sketch en seconde
 unsigned long current_time; // temps a afficher avec le décalage
-//int delta = 0; // offset correspondant à l'heure à partir de laquelle on décale
-//float alpha = 1.; // coefficient de ralentissement...
 
 
 ///////////////////////////////////////////////////////////////////
@@ -106,14 +104,13 @@ Serial.begin(9600);
 ///////////////////////////////////////////////////////////////////
 void loop()
 {
-  int j = 0;
-  unsigned long t;
-  float coeff;
-  int mic;
+  int j = 0; // indice pour l'incrémentation de l'intensité
+  unsigned long t; // le temps...
+  float coeff; // coefficient de variation de la durée des secondes
+  int mic; // pour enregistrer la valeur de l'analogin
   
-  //current_time = compile_time*1000 + delta + alpha*(millis()-delta);
-  //current_time = current_time % 86400000; // on remet current à 0 dès qu'on atteint 24h pour éviter d'exploser la mémoire de l'Arduino
   displayhour(current_time);
+  // ici il faudrait changer la boucle do..while en while tout simple pour plus de lisibilité
   do { 
     t = millis();
     while ( millis() < t + UP_TIME) {
@@ -122,7 +119,9 @@ void loop()
     // on incrémente l'intensité de 0 à 15
     write_7seg(0x0A,j);
     j++;
-  } while ( j < 15 );
+  } while ( j < 15 ); // je ne suis pas sur qu'on atteigne l'intensité maximale... a vérifier
+  Serial.print("j : ");
+  Serial.println(j);
   
   // à cet endroit du code l'intensité est à fond
   while ( millis() < time + 1000){
@@ -135,29 +134,18 @@ void loop()
     Serial.print("mic : ");
     Serial.print(mic);
     if (mic < THRESHOLD) {
-      // si le volume sonore dépasse la valeur de THRESHOLD on ralenti de 5 s
-      //if (delta == 0) delta = millis();
+      
       coeff = ((float) mic / 512.)*0.8 + 0.2; // on mappe les valeurs de [0 ; 512] dans l'intervalle [0.2 ; 0.8]
       Serial.print("map : ");
       Serial.print(coeff);
       Serial.print("\t");
-      //alpha *= coeff;
     }
     else {
       // sinon on remet le delta à 0
       // a modifier selon le comportement que vous voulez avoir...
       current_time = compile_time*1000 + millis();
       coeff = 1.;
-      //delta = 0;
-      //alpha /= 0.99;
-      //alpha = min(alpha, 1.);
     }
-    /*
-    Serial.print("\talpha : ");
-    Serial.print(alpha);
-    Serial.print(" delta : ");
-    Serial.println(delta);
-  */
   do { 
     t = millis();
     while (  millis() < t + DOWN_TIME) {
