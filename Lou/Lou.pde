@@ -1,8 +1,23 @@
 //
-// R&B 7 segments clock
+// Lou - A degenerating clock
 // code by Antoine Villeret, Basile de Gaulle & ROmée de la Bigne - copyright 2010
 // designed by Romée de la Bigne & Basile de Gaulle
 //
+
+/*
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 // définit les pin sur lesquels on branche les différents trucs
 #define MIC_PIN 0 // analog input for mic
@@ -265,6 +280,4 @@ void reglage_de_l_heure (){
       displayhour(compile_time+millis()/1000);
       delay(RELEASE_BTN_TIME); // un petit delai le temps de relacher le bouton
     }
-    // compile_time = compile_time % 60; // on remet les secondes à 0
-    // delta = 0; // on remet le delta à 0;
 }
