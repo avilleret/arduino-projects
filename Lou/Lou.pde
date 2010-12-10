@@ -39,6 +39,7 @@ byte digit=1;
 long time;
 unsigned long compile_time = 0; // heure à laquelle a été compilé le sketch en seconde
 unsigned long current_time; // temps a afficher avec le décalage
+float coeff; // coefficient de variation de la durée des secondes
 
 
 ///////////////////////////////////////////////////////////////////
@@ -121,49 +122,31 @@ void loop()
 {
   int j = 0; // indice pour l'incrémentation de l'intensité
   unsigned long t; // le temps...
-  float coeff; // coefficient de variation de la durée des secondes
-  int mic; // pour enregistrer la valeur de l'analogin
   
-  displayhour(current_time);
+  Serial.print("\n");
+  displayhour(current_time); 
+  // on ne lit la valeur du micro qu'une fois par seconde pour évite la dérive trop rapide
+  deregle();
+    
   // ici il faudrait changer la boucle do..while en while tout simple pour plus de lisibilité
   do { 
     t = millis();
-    while ( millis() < t + UP_TIME) {
+    while ( millis() < t + UP_TIME * coeff) {
       wait();
     }
-    // on incrémente l'intensité de 0 à 15
-    write_7seg(0x0A,j);
+    write_7seg(0x0A,j); // on incrémente l'intensité de 0 à 15
     j++;
   } while ( j < 15 ); // je ne suis pas sur qu'on atteigne l'intensité maximale... a vérifier
-  Serial.print("j : ");
-  Serial.println(j);
   
   // à cet endroit du code l'intensité est à fond
-  while ( millis() < time + 1000){
+  while ( millis() < time + 1000 * coeff){
     wait();
   }; // attend jusqu'à ce qu'une seconde se soit écoulé depuis la dernière boucle
   time = millis();
-  
-   // on ne lit la valeur du micro qu'une fois par seconde pour évite la dérive trop rapide
-    mic = analogRead(MIC_PIN);
-    Serial.print("mic : ");
-    Serial.print(mic);
-    if (mic < THRESHOLD) {
-      
-      coeff = ((float) mic / 512.)*0.8 + 0.2; // on mappe les valeurs de [0 ; 512] dans l'intervalle [0.2 ; 0.8]
-      Serial.print("map : ");
-      Serial.print(coeff);
-      Serial.print("\t");
-    }
-    else {
-      // sinon on remet le delta à 0
-      // a modifier selon le comportement que vous voulez avoir...
-      current_time = compile_time*1000 + millis();
-      coeff = 1.;
-    }
+ 
   do { 
     t = millis();
-    while (  millis() < t + DOWN_TIME) {
+    while (  millis() < t + DOWN_TIME * coeff) {
       wait();
     }
     write_7seg(0x0A,j); // on décrémente l'intensité jusqu'à 0
@@ -175,11 +158,11 @@ void loop()
   }
   
   t = millis();
-  while ( millis() < t + WAIT_TIME) {
+  while ( millis() < t + WAIT_TIME * coeff) {
     // on attend 100 ms... les led sont à ce moment toutes éteintes
     wait();
   }
-  current_time += coeff*1000.;
+  current_time += 1000.; // on incrément d'une seconde
   current_time = current_time % 86400000; // on remet current à 0 dès qu'on atteint 24h pour éviter d'exploser la mémoire de l'Arduino
 }
 
@@ -279,5 +262,24 @@ void reglage_de_l_heure (){
       else if ( btn1 && btn2 ) break; // si on appuie sur les 2 boutons en meme temps on sort de la boucle
       displayhour(compile_time+millis()/1000);
       delay(RELEASE_BTN_TIME); // un petit delai le temps de relacher le bouton
+    }
+}
+
+void deregle(){
+    int mic = analogRead(MIC_PIN);
+    Serial.print("\tmic : ");
+    Serial.print(mic);
+    if (mic < THRESHOLD) {
+      
+      coeff = 2. - ((float) mic / 512.); // on mappe les valeurs de [0 ; 512] dans l'intervalle [1. ; 2.] cad qu'un cycle durera 2 secondes lorsque mic == 0;  
+      Serial.print("\tmap : ");
+      Serial.print(coeff);
+      Serial.print("\t");
+    }
+    else {
+      // sinon on remet le delta à 0
+      // a modifier selon le comportement que vous voulez avoir...
+      current_time = compile_time*1000 + millis();
+      coeff = 1.;
     }
 }
