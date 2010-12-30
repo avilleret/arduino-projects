@@ -41,7 +41,6 @@ void setup()
   // give the Ethernet shield a second to initialize
   delay(1000);
   int time = millis();
-  clientGoogle.connect();
 }
 
 
@@ -49,11 +48,13 @@ void loop()
 {
   float temperature = (float) random(1000)/10.; // create some random values to test
   float humidity = 45 + (millis()%1000)/100.;
-  if ( millis() > time + 10000 && clientGoogle.connected()){ // update sheet each 10 s
+  if ( millis() > time + 10000 &&   clientGoogle.connect()){ // update sheet each 10 s
     String feedData = "entry.0.single=" + String((int)temperature) + "," + String(int(temperature*100)%100) + "&entry.1.single=" + String(int(humidity)) + "," + String(int(humidity*100)%100) + "&pageNumber=0&backupCache=&submit=Envoyer";
     //Serial.println(feedData);
     postRequest(clientGoogle, ipGoogle, 80, hostname, url, feedData);
     time = millis();
+    clientGoogle.flush();
+    clientGoogle.stop();
   }
   delay(10);
 }
