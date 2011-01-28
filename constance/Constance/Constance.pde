@@ -131,10 +131,11 @@ void loop()
 {
   
   Serial.print("\n");
-  
+  /*
   threshold = analogRead(THRESPIN);
   Serial.print("threshold : ");
   Serial.println(threshold);
+  */
   
   displayhour(current_time); 
   deregle();
@@ -186,6 +187,8 @@ void wait(){
     Serial.println(bt2);
     */
     
+    /*
+    // supprimer pour les portes ouvertes
     if (mic > threshold)
     {
       // si il y a du bruit on va très vite à l'heure actuelle
@@ -206,6 +209,7 @@ void wait(){
       while (coeff < 0.88);
       coeff = 1.;
     }
+    */
     
     count++;
     sum += mic;
@@ -219,11 +223,14 @@ void wait(){
     Serial.print(mic);
     */
     
+    /*
+    // supprmimer pour les portes ouvertes
     if (bt1 && bt2){
       // si on appuie sur les 2 boutons en meme temps on regle l'heure
       reglage_de_l_heure();
       delay(RELEASE_BTN_TIME); // un petit delai le temps de relacher les 2 boutons
     }
+    */
     
 }
 
@@ -283,18 +290,19 @@ void deregle(){
     mic = sum/count;
     count=0;
     sum=0;
-    if (mic < threshold) {
+    //if (mic < threshold) {
+      if ( 1 ) { // on entre toujours dans la boucle, l'horloge est constamment en train de ralentir
       
       //coeff = 2. - ((float) mic / THRESHOLD); // on mappe les valeurs de [0 ; THRESHOLD] dans l'intervalle [1. ; 2.] cad qu'un cycle durera 2 secondes lorsque mic == 0;  
-      coeff *= 1.05;
+      coeff *= 1.05; // coeff = 1, l'horloge avance normalement, coeff < 1. l'horloge accélère de plus en plus, coeff > 1., l'horloge ralenti de plus en plus
       /*
       Serial.print("\tmap : ");
       Serial.print(coeff);
       Serial.print("\t");
       */
     }
-    Serial.print("\tmic");
-    Serial.print(mic);
+    // Serial.print("\tmic");
+    // Serial.print(mic);
     Serial.print("\tcoeff");
     Serial.print(coeff);
 }
