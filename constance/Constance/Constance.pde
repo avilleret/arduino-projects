@@ -31,8 +31,8 @@
 #define CURVE_COEFF 0. // Curve coefficient
 #define CURVE_SIZE 128 // table size for curve
 
-#define UP_TIME 20 // temps de montée en ms
-#define DOWN_TIME 20 // temps de descente en ms
+#define UP_TIME 1 // temps de montée en ms
+#define DOWN_TIME 1 // temps de descente en ms
 #define WAIT_TIME 10 // temps d'attente en ms éteint
 // le temps d'attente allumé est égal à 1000 - (UP_TIME + DOWN_TIME + WAIT_TIME)
 //#define THRESHOLD 350 // seuil pour le déclenchement du bug...
@@ -123,14 +123,13 @@ void setup()
   seconde = atoi(tmp);
   compile_time = ( ( (hour * 60 + minute ) * 60 ) + seconde );
   Serial.println(compile_time);
-  current_time = compile_time*1000 + millis();
   coeff = 1.;
   //threshold = analogRead(THRESPIN);
   threshold = 200;
   mic=0;
   Serial.print("threshold : ");
   Serial.print(threshold);
-  makeCurve();
+  current_time = compile_time*1000 + millis();
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -140,7 +139,10 @@ void loop()
 
   displayhour(current_time); 
   coeff *= 1.005;
+  coeff = min(10., coeff); // au plus l'incrémentation des secondes prendra 10 secondes.
   fading();
+  Serial.print("coeff : ");
+  Serial.println(coeff);
   current_time += 1000.; // on incrément d'une seconde
   current_time = current_time % 86400000; // on remet current à 0 dès qu'on atteint 24h pour éviter d'exploser la mémoire de l'Arduino
 }
@@ -183,6 +185,7 @@ void wait(){
   // on print toutes les valeurs qu'on peut, attention ça peut aller trop vite pour le Serial...
 
   tmp = analogRead(MIC_PIN) - tmp; // simple derivation
+
   long unsigned int delta;
   /*
    Serial.print("buttons :");
@@ -195,10 +198,9 @@ void wait(){
   {
     // si il y a du bruit on va très vite à l'heure actuelle
     Serial.println(tmp);
-    Serial.println(mic);
     Serial.println("trop de bruit !!");
-    // on force l'intensité à fond
-    write_7seg(0x0A,15);
+    
+    write_7seg(0x0A,15); // on force l'intensité à fond
     coeff = 1.;
     do {
       current_time += 1000;
@@ -317,21 +319,6 @@ void fading(){
 
   t = millis();
   while ( millis() < t + WAIT_TIME) {
-    // on attend 100 ms... les led sont à ce moment toutes éteintes
     wait();
   } 
-}
-
-void makeCurve(){
-  int i;
-  Serial.println("make curve...");
-  for (i=0 ; i < CURVE_SIZE ; i++){
-    curve[i] = (exp(float(i/(CURVE_SIZE-1)*CURVE_COEFF)-1))/(exp(CURVE_COEFF)-1);
-    Serial.print(int(curve[i]));
-    Serial.print(".");
-    Serial.print(int(curve[i]*1000.)%1000);
-    Serial.print("\t");
-    Serial.println(curve[i]);
-  }
-  Serial.println("curve done.");
 }
